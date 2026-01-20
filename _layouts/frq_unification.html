@@ -1,0 +1,412 @@
+---
+layout: default
+---
+
+<style>
+  /* === Post Header === */
+  .post-header h3 { font-size: 1.8rem; font-weight: 600; margin-top: .5rem; margin-bottom: .5rem; line-height: 1.3; }
+  .page-description { font-size: 1rem; color: #555; margin-bottom: 1rem; }
+
+  /* === Meta Info === */
+  .post-meta { font-size: .9rem; color: #666; margin-bottom: .5rem; }
+  .post-meta time { font-weight: 500; }
+
+  /* === Category & Breadcrumb Links === */
+  .category-tags-link { display:inline-block; padding:.2rem .6rem; margin:.1rem; font-size:.85rem; background:#f5f5f5; border-radius:999px; color:#333; text-decoration:none; transition:background .2s ease; }
+  .category-tags-link:hover { background:#e0e0e0; }
+  .post-header { margin-bottom: 1rem; }
+  .post-header a.category-tags-link { margin-right:.3rem; }
+
+  /* === Main Content Styling === */
+  .post-content { line-height: 1.7; font-size: 1rem; }
+  .post-content h2, .post-content h3 { margin-top:1.5rem; margin-bottom:.75rem; border-bottom:1px solid #eee; padding-bottom:.3rem; }
+
+  /* === FRQ blocks === */
+  .frq-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 16px 0; background: #fff; }
+  .frq-title { font-size: 1.25rem; font-weight: 650; margin: 0 0 8px 0; }
+  .frq-subtitle { color: #6b7280; margin: 0 0 12px 0; }
+  .frq-part { margin: 12px 0; }
+  .frq-part label { display:block; font-weight: 600; margin-bottom: 6px; }
+  .frq-part textarea { width:100%; min-height: 140px; padding: 10px; border-radius: 10px; border: 1px solid #d1d5db; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  .frq-actions { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .btn { padding: 10px 14px; border-radius: 10px; border: 1px solid #d1d5db; background: #f9fafb; cursor:pointer; }
+  .btn-primary { background: #2563eb; color: white; border-color: #2563eb; }
+  .btn-danger { background: #dc2626; color: white; border-color: #dc2626; }
+  .btn:disabled { opacity: 0.55; cursor:not-allowed; }
+
+  .status { margin-top: 10px; font-size: 0.95rem; color:#374151; }
+  .error { color:#b91c1c; }
+  .success { color:#047857; }
+
+  .attempts { margin-top: 18px; }
+  .attempt-row { border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; }
+  .pill { display:inline-block; padding: 3px 10px; border-radius:999px; background:#f3f4f6; font-size: 0.85rem; color:#111827; margin-right: 6px; }
+</style>
+
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    {%- if page.menu -%}
+      {% include {{page.menu}} html=content %}
+    {%- endif -%}
+
+    {% if page.categories.size > 0 %}
+      Categories:
+      {% for category in page.categories %}
+        <a class="category-tags-link" href="{{site.baseurl}}/search/#{{category|slugize}}">{{category}}</a>{% unless forloop.last %}&nbsp;{% endunless %}
+      {% endfor %}
+    {% endif %}
+
+    {% if page.breadcrumb %}
+      Breadcrumb:
+      <a class="category-tags-link" href="{{ site.baseurl }}{{ page.breadcrumb_url }}">{{ page.breadcrumb_label }}</a>
+    {% endif %}
+
+    <p class="post-meta post-meta-title">
+      {%- assign date_format = site.minima.date_format | default: "%b %-d, %Y" -%}
+      <time class="dt-published" datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
+        {{ page.date | date: date_format }}
+      </time>
+      {%- if page.modified_date -%}
+        ~
+        {%- assign mdate = page.modified_date | date_to_xmlschema -%}
+        <time class="dt-modified" datetime="{{ mdate }}" itemprop="dateModified">
+          {{ mdate | date: date_format }}
+        </time>
+      {%- endif -%}
+      {%- if page.author -%}
+        • {% for author in page.author %}
+          <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+            <span class="p-author h-card" itemprop="name">{{ author }}</span>
+          </span>{% if forloop.last == false %}, {% endif %}
+        {% endfor %}
+      {%- endif -%}
+    </p>
+
+    <h3>{{ page.title | escape }}</h3>
+    {%- if page.description -%}
+      <p class="page-description">{{ page.description }}</p>
+    {%- endif -%}
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    {%- if page.toc -%}
+      {% include toc.html html=content %}
+    {%- endif -%}
+
+    <!-- ===== FRQ CONTENT (Markdown body) ===== -->
+    <div class="frq-card">
+      <div class="frq-title">FRQ</div>
+
+      <!-- ✅ valid HTML (no nested <p>) -->
+      <div class="frq-subtitle" id="frq-meta-pills"></div>
+
+      <div class="prose max-w-3xl mx-auto">
+        {{ content }}
+      </div>
+    </div>
+
+    <!-- ===== Centralized FRQ Loader ===== -->
+    <div class="frq-card" id="frq-system">
+      <div class="frq-title">Submit + View Results (Centralized)</div>
+      <p class="frq-subtitle">
+        This section loads the canonical FRQ definition and your attempt history using a stable <code>frq_id</code>.
+      </p>
+
+      <div id="frq-definition"></div>
+
+      <form id="frq-form" style="margin-top: 12px;">
+        <div id="answer-fields"></div>
+        <div class="frq-actions">
+          <button type="button" class="btn btn-primary" id="submitAttemptBtn">Submit Attempt</button>
+          <button type="button" class="btn" id="refreshBtn">Refresh</button>
+          <button type="button" class="btn btn-danger" id="clearLocalBtn">Clear Draft</button>
+        </div>
+        <div class="status" id="statusBox"></div>
+      </form>
+
+      <div class="attempts" id="attemptsBox"></div>
+    </div>
+  </div>
+
+  <a class="u-url" href="{{ page.url | relative_url }}" hidden></a>
+</article>
+
+<script type="module">
+  // @ts-nocheck
+  import { javaURI, fetchOptions, pythonURI } from "{{ site.baseurl }}/assets/js/api/config.js";
+
+  const statusBox = document.getElementById("statusBox");
+  const defBox = document.getElementById("frq-definition");
+  const answerFields = document.getElementById("answer-fields");
+  const attemptsBox = document.getElementById("attemptsBox");
+
+  const submitBtn = document.getElementById("submitAttemptBtn");
+  const refreshBtn = document.getElementById("refreshBtn");
+  const clearLocalBtn = document.getElementById("clearLocalBtn");
+
+  function setStatus(msg, kind = "") {
+    statusBox.className = "status " + kind;
+    statusBox.textContent = msg;
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  // ---------------- URL params (optional) + front matter fallback ----------------
+  const params = new URLSearchParams(window.location.search);
+
+  const year =
+    params.get("year") ||
+    "{{ page.year | default: '' }}";
+
+  const n =
+    params.get("n") ||
+    "{{ page.frq_number | default: '' }}";
+
+  const unit =
+    params.get("unit") ||
+    "{{ page.unit | default: '' }}";
+
+  const topic =
+    params.get("topic") ||
+    "{{ page.topic | default: '' }}";
+
+  if (!year || !n) {
+    setStatus("Missing FRQ info. Add year/frq_number in front matter OR use ?year=2025&n=2", "error");
+    throw new Error("Missing FRQ identifiers");
+  }
+
+  // ✅ CENTRALIZED stable FRQ_ID (unit/topic never affect ID)
+  const course = "{{ page.course_slug | default: 'apcsa' }}";
+  const FRQ_ID = `${course}:${year}:frq${n}`;
+
+  document.getElementById("frq-meta-pills").innerHTML = `
+    <span class="pill">${escapeHtml(course.toUpperCase())}</span>
+    <span class="pill">${escapeHtml(year)}</span>
+    <span class="pill">FRQ ${escapeHtml(n)}</span>
+    ${unit ? `<span class="pill">${escapeHtml(unit)}</span>` : ""}
+    ${topic ? `<span class="pill">${escapeHtml(topic)}</span>` : ""}
+    <span class="pill">id: ${escapeHtml(FRQ_ID)}</span>
+  `;
+
+  async function getCredentials() {
+    try {
+      const res = await fetch(`${pythonURI}/api/id`, {
+        ...fetchOptions,
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.uid || data.name || data.username || null;
+    } catch {
+      return null;
+    }
+  }
+
+  // ---------------- Draft storage ----------------
+  const draftKey = (frqId) => `frq:draft:${frqId}`;
+
+  function loadDraft(frqId) {
+    try {
+      const raw = localStorage.getItem(draftKey(frqId));
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveDraft(frqId, answers) {
+    try { localStorage.setItem(draftKey(frqId), JSON.stringify(answers)); } catch {}
+  }
+
+  function clearDraft(frqId) {
+    try { localStorage.removeItem(draftKey(frqId)); } catch {}
+  }
+
+  function renderDefinition(frq) {
+    if (!frq) {
+      defBox.innerHTML = `<p class="error">FRQ definition missing for <code>${escapeHtml(FRQ_ID)}</code>.</p>`;
+      submitBtn.disabled = true;
+      return;
+    }
+
+    const meta = frq.metadata || {};
+    const title = meta.title || meta.topic?.name || "FRQ Definition";
+    const parts = (frq.prompt && Array.isArray(frq.prompt.parts)) ? frq.prompt.parts : [];
+
+    defBox.innerHTML = `
+      <div>
+        <div class="frq-title">${escapeHtml(title)}</div>
+        <div class="frq-subtitle">
+          <span class="pill">${escapeHtml(meta.course_slug || course)}</span>
+          <span class="pill">${escapeHtml(meta.year || year)}</span>
+          <span class="pill">FRQ ${escapeHtml(meta.frq_number || n)}</span>
+          <span class="pill">v${escapeHtml(frq.version ?? 1)}</span>
+        </div>
+      </div>
+    `;
+
+    if (!parts.length) {
+      answerFields.innerHTML = `<p class="error">This FRQ has no parts defined. Submit disabled.</p>`;
+      submitBtn.disabled = true;
+      return;
+    }
+
+    submitBtn.disabled = false;
+
+    const existingDraft = loadDraft(FRQ_ID);
+
+    answerFields.innerHTML = parts.map(p => {
+      const pid = p.part_id;
+      const prefill = existingDraft[pid] || "";
+      return `
+        <div class="frq-part">
+          <label for="ans_${escapeHtml(pid)}">Part ${escapeHtml(pid)} (max ${escapeHtml(p.max_points ?? "?")})</label>
+          <div style="color:#6b7280; margin-bottom:8px;">${escapeHtml(p.text || "")}</div>
+          <textarea id="ans_${escapeHtml(pid)}" name="ans_${escapeHtml(pid)}" placeholder="Write your answer for part ${escapeHtml(pid)}...">${escapeHtml(prefill)}</textarea>
+        </div>
+      `;
+    }).join("");
+
+    parts.forEach(p => {
+      const pid = p.part_id;
+      const el = document.getElementById(`ans_${pid}`);
+      if (!el) return;
+      el.addEventListener("input", () => {
+        const draft = loadDraft(FRQ_ID);
+        draft[pid] = el.value;
+        saveDraft(FRQ_ID, draft);
+      });
+    });
+  }
+
+  function renderAttempts(viewPayload) {
+    const attempts = viewPayload?.attempts || [];
+    if (!attempts.length) {
+      attemptsBox.innerHTML = `<p class="frq-subtitle">No attempts yet.</p>`;
+      return;
+    }
+
+    attemptsBox.innerHTML = `
+      <div class="frq-title">Attempts</div>
+      ${attempts.map(att => {
+        const score = att.score?.total ?? "—";
+        const when = att.submitted_at ?? "—";
+        const overall = att.feedback?.overall ?? "";
+        return `
+          <div class="attempt-row">
+            <div><strong>Attempt</strong> <span class="pill">score: ${escapeHtml(score)}</span> <span class="pill">${escapeHtml(when)}</span></div>
+            ${overall ? `<div style="margin-top:6px;"><strong>Feedback:</strong> ${escapeHtml(overall)}</div>` : ""}
+          </div>
+        `;
+      }).join("")}
+    `;
+  }
+
+  async function fetchDefinition() {
+    const res = await fetch(`${javaURI}/api/frqs/${encodeURIComponent(FRQ_ID)}`, { ...fetchOptions, method: "GET" });
+    if (!res.ok) throw new Error(`Definition load failed (${res.status}): ${await res.text()}`);
+    return await res.json();
+  }
+
+  async function fetchUnifiedView(studentId) {
+    const res = await fetch(`${javaURI}/api/frqs/${encodeURIComponent(FRQ_ID)}/view?student_id=${encodeURIComponent(studentId || "")}`, { ...fetchOptions, method: "GET" });
+    if (!res.ok) throw new Error(`View load failed (${res.status}): ${await res.text()}`);
+    return await res.json();
+  }
+
+  async function submitAttempt(studentId, frqDef) {
+    const parts = frqDef?.prompt?.parts || [];
+    const answers = {};
+    for (const p of parts) {
+      const pid = p.part_id;
+      const el = document.getElementById(`ans_${pid}`);
+      answers[pid] = el ? el.value : "";
+    }
+
+    const body = {
+      student_id: studentId,
+      frq_id: FRQ_ID,                 // ✅ stable id always
+      answers,
+      context: { unit: unit || null, topic: topic || null } // optional metadata only
+    };
+
+    const res = await fetch(`${javaURI}/api/attempts`, {
+      ...fetchOptions,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) throw new Error(`Submit failed (${res.status}): ${await res.text()}`);
+    return await res.json();
+  }
+
+  async function bootstrap() {
+    setStatus("Loading FRQ from centralized system...");
+
+    const studentId = await getCredentials();
+    if (!studentId) {
+      setStatus("Not logged in (could not read /api/id).", "error");
+      submitBtn.disabled = true;
+      return;
+    }
+
+    try {
+      const frqDef = await fetchDefinition();
+      renderDefinition(frqDef);
+
+      const view = await fetchUnifiedView(studentId);
+      renderAttempts(view);
+
+      setStatus("Loaded successfully.", "success");
+
+      submitBtn.onclick = async () => {
+        submitBtn.disabled = true;
+        setStatus("Submitting attempt...");
+        try {
+          await submitAttempt(studentId, frqDef);
+          setStatus("Submitted. Refreshing view...", "success");
+          renderAttempts(await fetchUnifiedView(studentId));
+        } catch (e) {
+          setStatus(e.message || "Submit error", "error");
+        } finally {
+          submitBtn.disabled = false;
+        }
+      };
+
+      refreshBtn.onclick = async () => {
+        setStatus("Refreshing...");
+        try {
+          renderAttempts(await fetchUnifiedView(studentId));
+          setStatus("Refreshed.", "success");
+        } catch (e) {
+          setStatus(e.message || "Refresh error", "error");
+        }
+      };
+
+      clearLocalBtn.onclick = () => {
+        clearDraft(FRQ_ID);
+        const parts = frqDef?.prompt?.parts || [];
+        for (const p of parts) {
+          const el = document.getElementById(`ans_${p.part_id}`);
+          if (el) el.value = "";
+        }
+        setStatus("Draft cleared.", "success");
+      };
+
+    } catch (e) {
+      setStatus(e.message || "Load error", "error");
+      submitBtn.disabled = true;
+    }
+  }
+
+  bootstrap();
+</script>
