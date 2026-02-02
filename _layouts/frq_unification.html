@@ -265,7 +265,7 @@ layout: default
     setStatus("Submitting…", "muted");
 
     // 1) Submit
-    const submitUrl = `/api/submissions/submit/${encodeURIComponent(assignmentId)}`;
+    const submitUrl = `${javaURI}/api/submissions/submit/${encodeURIComponent(assignmentId)}`;
     const body = {
       submitterId: Number(submitterId),
       isGroup: !!cfg.isGroup,
@@ -297,7 +297,7 @@ layout: default
 
     // 2) Trigger Gemini grading
     setStatus("Generating feedback (Gemini)…", "muted");
-    const gradeUrl = `/api/frq-feedback/submission/${encodeURIComponent(submissionId)}`;
+    const gradeUrl = `${javaURI}/api/frq-feedback/submission/${encodeURIComponent(submissionId)}`;
 
     let gradeResp;
     try {
@@ -330,7 +330,8 @@ layout: default
       return;
     }
 
-    const url = `/api/submissions/getSubmissions/${encodeURIComponent(submitterId)}`;
+    const url = `${javaURI}/api/submissions/getSubmissions/${encodeURIComponent(submitterId)}`;
+
 
     let list;
     try {
